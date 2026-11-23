@@ -104,7 +104,7 @@ function levelCard(lv, cur) {
   }
   return `<button class="lv ${lv.hikake ? 'oni' : ''} ${cur === lv.id ? 'last' : ''}" data-act="start" data-lv="${lv.id}">
       <b>${lv.name}</b><span class="lvb">${LETTERS.slice(0, lv.n).map((L) => bottle(L, { w: 34 })).join('')}</span>
-      <span class="lvt">${lv.hikake ? '水がまざる！' : `${lv.n}本`}・実験${lv.max}回まで</span></button>`;
+      <span class="lvt">${lv.hikake ? `水がまざる・新しい実験2つ<br>${lv.max}回まで` : `${lv.n}本・実験${lv.max}回まで`}</span></button>`;
 }
 
 function levelOverlay() {
@@ -151,7 +151,7 @@ function introScreen() {
       <div class="sticky">
         <p>${g.hikake ? `${g.n}本のびんには、次の${g.pool.length}種類のうち<em>${g.n}種類</em>が1本ずつ入っている。<em>どれか1つは入っていない！</em>` : `${g.n}本のびんには、次の液が<em>1本ずつ</em>入っている。`}</p>
         <div class="liqs">${g.pool.map((id) => `<span>${liquid(id).name}</span>`).join('')}</div>
-        <p class="sm">実験は${expsFor(g.ind).length}種類で<em>${g.max}回</em>まで。においは<em>手であおいで</em>かぐ。</p>
+        <p class="sm">実験は${expsFor(g.ind, g.hikake).length}種類で<em>${g.max}回</em>まで。においは<em>手であおいで</em>かぐ。</p>
         <div class="memo-help"><p class="sm">カルテの液の名前は、自分用のメモ。タップするたびに変わるよ。</p>
           <div class="mh-row"><span class="mh-step"><span class="mh o">食塩水</span><small>これかも</small></span><i>→</i>
           <span class="mh-step"><span class="mh x">食塩水</span><small>ちがう</small></span><i>→</i>
@@ -164,7 +164,7 @@ function introScreen() {
 // ---------------- 実験室 ----------------
 function labCard(b) {
   const g = S.g;
-  const slots = expsFor(g.ind).map((e) => {
+  const slots = expsFor(g.ind, g.hikake).map((e) => {
     const c = G.cellOf(g, b, e.id);
     const fresh = S.fresh.write && S.fresh.write.b === b && S.fresh.write.e === e.id;
     return `<div class="sl ${c === 'fail' ? 'fail' : ''}">${tool(e.id)}<span>${e.slot}</span>${c ? resultHTML(c, fresh, e.id) : '<b class="q">？</b>'}</div>`;
@@ -183,7 +183,7 @@ function labScreen() {
   const g = S.g;
   const { b, e } = S.sel;
   const leftN = G.left(g);
-  const tools = expsFor(g.ind).map((x) => {
+  const tools = expsFor(g.ind, g.hikake).map((x) => {
     const done = b !== null && G.isDone(g, b, x.id);
     const off = leftN === 0 || done;
     return `<button class="tool ${e === x.id ? 'sel' : ''} ${off ? 'off' : ''}" data-act="selt" data-e="${x.id}">
@@ -209,7 +209,7 @@ function labScreen() {
     <div class="cards">${G.letters(g).map((_, i) => labCard(i)).join('')}</div>
     <div class="tray">${tools}
       <div class="sticky confirm"><p>${msg}</p><div class="crow"><span class="sm">${leftN > 0 ? `あと${leftN}回` : ''}</span>${btn}</div></div>
-    </div>`, { cls: 'is-lab' });
+    </div>`, { cls: `is-lab e${expsFor(g.ind, g.hikake).length}` });
 }
 
 function mannerOverlay() {
@@ -260,7 +260,7 @@ function quitOverlay() {
 function ansCard(b, chk) {
   const g = S.g;
   const a = g.answers[b];
-  const slots = expsFor(g.ind).map((e) => {
+  const slots = expsFor(g.ind, g.hikake).map((e) => {
     const c = G.cellOf(g, b, e.id);
     if (c && c !== 'fail') return `<div class="sl">${tool(e.id)}<span>${e.slot}</span>${resultHTML(c, false, e.id)}</div>`;
     return `<div class="sl dim">${tool(e.id)}<span>${e.slot}</span><b class="q">${c === 'fail' ? '失敗' : '−'}</b></div>`;
@@ -283,7 +283,7 @@ function answerScreen() {
       ${G.left(g) > 0 ? `<button class="bigbtn" data-act="backLab">← 実験にもどる<small>あと${G.left(g)}回</small></button>` : ''}
       <div class="tray-hint">実験の結果だけでは決めきれないのに当たったら「<b>まぐれ</b>」になるよ。</div>
       <div class="sticky confirm ${chk.ok ? 'ok' : ''}"><p>${chk.msg}</p></div>
-    </div>`, { cls: 'is-answer' });
+    </div>`, { cls: `is-answer e${expsFor(g.ind, g.hikake).length}` });
 }
 
 function pickOverlay() {
@@ -324,7 +324,7 @@ function judgeScreen() {
     ${bottlesRow('judge')}
     <div class="cards">${cards}</div>
     <div class="tray judge-tray"><div class="tray-hint big">正解 <b>${J.correct}</b> / ${g.n}${J.lucky ? `（まぐれ ${J.lucky}）` : ''}　・　実験 <b>${J.used}</b> / ${g.max}回</div>
-      <button class="bigbtn accent appear" data-act="toResult">結果カードを見る →</button></div>`, { cls: 'is-judge' });
+      <button class="bigbtn accent appear" data-act="toResult">結果カードを見る →</button></div>`, { cls: `is-judge e${expsFor(g.ind, g.hikake).length}` });
 }
 
 // ---------------- 結果カード ----------------
@@ -352,7 +352,7 @@ function resultScreen() {
           <div class="stamp r${J.title.rank}"><span>${J.title.name}</span></div>
           <div class="np-score"><div>正解<b>${J.correct}</b>/${g.n}</div>${J.lucky ? `<div class="lk">うち まぐれ<b>${J.lucky}</b></div>` : ''}<div>実験<b>${J.used}</b>/${g.max}回</div></div>
         </div>
-        ${J.unlocked ? '<div class="sticky unlocked">鬼モードが出てきた！<small>水がまざった6種類から推理しよう</small></div>' : ''}
+        ${J.unlocked ? '<div class="sticky unlocked">鬼モードが出てきた！<small>水がまざって、新しい実験が2つ使える</small></div>' : ''}
         <table class="np-table"><thead><tr><th>びん</th><th>自分の答え</th><th>根拠になった結果</th><th></th></tr></thead><tbody>${rows}</tbody></table>
       </div>
       <div class="np-foot"><span>この問題は、うまく選べば<b>最少${g.need}回</b>で必ず当てられる。</span></div>

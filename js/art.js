@@ -312,6 +312,6 @@ export function howtoArt(i, ind = 'litmus') {
   if (i === 0)
     return `<div class="howart five">${['A', 'B', 'C', 'D', 'E'].map((l) => bottle(l, { w: 46 })).join('')}</div>`;
   if (i === 1)
-    return `<div class="howart">${rack(7)}<div class="howtools">${tool('miru')}${tool('niou')}${tool('jouhatsu')}${tool(ind)}${tool('alumi')}${tool('co2')}</div></div>`;
+    return `<div class="howart">${rack(7)}<div class="howtools">${tool('miru')}${tool('niou')}${tool('jouhatsu')}${tool(ind)}</div></div>`;
   return `<div class="howart">${tool('niou')}<span class="howarrow">→</span><span class="howcard">正体は？<b>○ △ ×</b></span></div>`;
 }

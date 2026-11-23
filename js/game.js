@@ -127,7 +127,7 @@ function permsOf(arr, k = arr.length) {
   });
   return out;
 }
-const expIdsOf = (g) => expsFor(g.ind).map((e) => e.id);
+const expIdsOf = (g) => expsFor(g.ind, g.hikake).map((e) => e.id);
 // 液 id が、びん b でやった実験の結果と合うか
 function fitsBottle(g, b, id) {
   return expIdsOf(g).every((e) => {

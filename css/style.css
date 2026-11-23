@@ -287,6 +287,17 @@ body.portrait #rotate { display: block; }
 
 .pick { min-width: 560px; }
 .lvdialog { min-width: 900px; }
+/* 実験が4つのとき（初級〜上級）は、道具とカルテの行を大きく */
+.e4 .tool { width: 150px; }
+.e4 .tool svg { width: 104px; height: 78px; }
+.e4 .tool > span:last-child { font-size: 16px; }
+.e4 .tray { gap: 16px; padding: 0 20px; }
+.e4 .confirm { width: 300px; }
+.e4 .sl { height: 35px; font-size: 12px; }
+.e4 .sl svg { width: 26px; height: 20px; }
+.e4 .sl b { font-size: 15px; }
+.e4 .kc { gap: 5px; }
+.e4 .cand { min-height: 30px; font-size: 13px; }
 .topr { display: flex; align-items: center; gap: 12px; }
 .mute { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #6d5a42; background: rgba(255, 255, 255, .45); }
 .mute svg { width: 26px; height: 26px; }

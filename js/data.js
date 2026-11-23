@@ -37,7 +37,8 @@ export const INDICATORS = {
   litmus: { id: 'litmus', name: 'リトマス紙', slot: 'リトマス' },
   btb:    { id: 'btb',    name: 'BTB溶液',    slot: 'BTB' },
 };
-export const expsFor = (ind = 'litmus') => [EXPS[0], EXPS[1], EXPS[2], INDICATORS[ind] || INDICATORS.litmus, EXPS[4], EXPS[5]];
+// アルミニウム・二酸化炭素は鬼モードだけ（extra）
+export const expsFor = (ind = 'litmus', extra = false) => [EXPS[0], EXPS[1], EXPS[2], INDICATORS[ind] || INDICATORS.litmus, ...(extra ? [EXPS[4], EXPS[5]] : [])];
 
 export const exp = (id) => EXPS.find((e) => e.id === id) || INDICATORS[id];
 
