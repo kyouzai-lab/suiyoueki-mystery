@@ -47,7 +47,7 @@ function bottlesRow(mode) {
   return `<div class="bottles">${G.letters(g).map((L, b) => {
     const sel = mode === 'lab' && S.sel.b === b;
     let mark = null;
-    if (mode === 'judge') mark = S.judged.marks[b] ? 'o' : 'x';
+    if (mode === 'judge') mark = { ok: 'o', lucky: 'tri', wrong: 'x' }[S.judged.status[b]];
     const act = mode === 'lab' ? 'selb' : mode === 'answer' ? 'pick' : '';
     return `<button class="slotb ${sel ? 'sel' : ''}" ${act ? `data-act="${act}" data-b="${b}"` : 'tabindex="-1"'} aria-label="びん${L}">
       ${sel ? '<span class="spot"></span>' : ''}${bottle(L, { no: g.no, mark, delay: 0.3 + b * 0.55 })}</button>`;
@@ -71,6 +71,7 @@ function titleScreen() {
       ${has ? '<button class="bigbtn" data-act="resume">つづきから</button>' : ''}
       <button class="bigbtn" data-act="howto">あそびかた</button>
     </div>
+    <button class="nobtn" data-act="byNo">問題番号で解く</button>
     <div class="ind-set"><span>4つ目の実験</span>
       <div class="seg">${Object.values(INDICATORS).map((x) => `<button class="${G.getInd() === x.id ? 'on' : ''}" data-act="setInd" data-i="${x.id}">${x.name}</button>`).join('')}</div>
       <span class="sm">先生が選ぶ（次の「はじめる」から）</span></div>`, { board, cls: 'is-title' });
@@ -80,7 +81,7 @@ function howtoOverlay() {
   const steps = [
     ['びんの正体', 'びんに、ちがう水溶液が<b>1本ずつ</b>入っている。どのびんが何かを当てよう。初級は3本、中級は4本、上級は5本。'],
     ['実験は回数が決まっている', '1回で調べられるのは、<b>1本のびんに1つの実験</b>だけ。初級4回・中級6回・上級7回まで。どのびんに何を調べるか考えよう。'],
-    ['推理して答える', 'わかったら「推理する」。全部のびんの正体と、<b>決め手</b>になった結果を答えよう。少ない回数で全部当てたら名探偵！'],
+    ['推理して答える', 'カルテの液の名前は、タップで<b>○→×→もとにもどる</b>メモ。わかったら「推理する」。正体と、<b>決め手</b>になった結果を答えよう。決め手が足りないと「まぐれ」になるよ。'],
   ];
   return `<div class="ov"><div class="howto">
     <div class="howcards">${steps.map(([h, t], i) => `<div class="hc" style="--r:${ROT[i]}"><div class="hn">${i + 1}</div><h3>${h}</h3>${howtoArt(i, G.getInd())}<p>${t}</p></div>`).join('')}</div>
@@ -98,6 +99,26 @@ function levelOverlay() {
     <div class="drow"><span class="sm">本数が多いほどむずかしい</span><button class="ghost" data-act="closeOv">もどる</button></div></div></div>`;
 }
 
+function byNoOverlay() {
+  const { digits, n } = S.ov;
+  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'del', '0', 'ok'];
+  const ok = digits.length > 0 && +digits > 0;
+  return `<div class="ov"><div class="sticky dialog bynodialog"><p>先生が言った<em>問題番号</em>と<em>レベル</em>を入れよう</p>
+    <div class="byno">
+      <div class="byno-left">
+        <div class="nodisp">No.<b>${digits || '<i>―</i>'}</b></div>
+        <div class="seg light">${Object.values(LEVELS).map((lv) => `<button class="${n === lv.n ? 'on' : ''}" data-act="noLv" data-n="${lv.n}">${lv.name}<small>${lv.n}本</small></button>`).join('')}</div>
+        <p class="sm">同じ番号・同じレベルなら、みんな同じ問題になるよ。</p>
+      </div>
+      <div class="pad">${keys.map((k) => k === 'del'
+        ? '<button class="pd fn" data-act="noDel">けす</button>'
+        : k === 'ok'
+          ? `<button class="pd go2 ${ok ? '' : 'off'}" data-act="noStart">解く</button>`
+          : `<button class="pd" data-act="noDigit" data-d="${k}">${k}</button>`).join('')}</div>
+    </div>
+    <div class="drow"><span></span><button class="ghost" data-act="closeOv">もどる</button></div></div></div>`;
+}
+
 // ---------------- 事件の導入 ----------------
 function introScreen() {
   const g = S.g;
@@ -108,6 +129,7 @@ function introScreen() {
         <p>${g.n}本のびんには、次の液が<em>1本ずつ</em>入っている。</p>
         <div class="liqs">${g.liqs.map((id) => `<span>${liquid(id).name}</span>`).join('')}</div>
         <p class="sm">実験は「見る・におう・蒸発させる・${INDICATORS[g.ind].name}」で<em>${g.max}回</em>まで。においは<em>手であおいで</em>かぐ。</p>
+        <p class="sm memo-help">カルテの液の名前をタップすると、<span class="mh o">○</span>→<span class="mh x">×</span>→もとにもどる。自分用のメモだよ。</p>
       </div>
       <button class="bigbtn accent" data-act="toLab">実験をはじめる</button>
     </div>`, { board, cls: 'is-intro' });
@@ -269,16 +291,16 @@ function judgeScreen() {
   const cards = G.letters(g).map((L, b) => {
     const a = g.answers[b];
     const ok = J.marks[b];
-    return `<div class="kc judge ${ok ? 'right' : 'wrong'}" style="--r:${ROT[b]};--d:${0.3 + b * 0.55}s">
+    return `<div class="kc judge ${J.status[b] === 'ok' ? 'right' : J.status[b] === 'lucky' ? 'lucky' : 'wrong'}" style="--r:${ROT[b]};--d:${0.3 + b * 0.55}s">
       <div class="kc-head"><span class="l">${L}</span><span class="s">判定</span></div>
       <div class="ansname pickd">${liquid(a.liq).name}</div>
-      <div class="verdict">${ok ? '<b>○ 正解</b>' : `<b>× ちがう</b><span>正しくは<br><em>${liquid(g.assign[b]).name}</em></span>`}</div>
+      <div class="verdict">${J.status[b] === 'ok' ? '<b>○ 正解</b>' : J.status[b] === 'lucky' ? '<b>△ まぐれ</b><span>当たったけど<br>決め手が足りない</span>' : `<b>× ちがう</b><span>正しくは<br><em>${liquid(g.assign[b]).name}</em></span>`}</div>
       <div class="keys">${a.keys.map((k) => `<span>${keyText(b, k)}</span>`).join('')}</div></div>`;
   }).join('');
   return shell(`${topbar('<span></span>', { center: '<div class="center-title">判定<small>先生の赤ペンが入るよ</small></div>' })}
     ${bottlesRow('judge')}
     <div class="cards">${cards}</div>
-    <div class="tray judge-tray"><div class="tray-hint big">正解 <b>${J.correct}</b> / ${g.n}　・　実験 <b>${J.used}</b> / ${g.max}回</div>
+    <div class="tray judge-tray"><div class="tray-hint big">正解 <b>${J.correct}</b> / ${g.n}${J.lucky ? `（まぐれ ${J.lucky}）` : ''}　・　実験 <b>${J.used}</b> / ${g.max}回</div>
       <button class="bigbtn accent appear" data-act="toResult">結果カードを見る →</button></div>`, { cls: 'is-judge' });
 }
 
@@ -290,20 +312,26 @@ function resultScreen() {
     const a = g.answers[b];
     const ok = J.marks[b];
     const right = liquid(g.assign[b]);
-    return `<tr class="${ok ? '' : 'wrong'}"><td class="rl">${L}</td><td class="ra">${liquid(a.liq).name}</td>
-      <td class="rk">${a.keys.map((k) => keyText(b, k)).join('、')}</td><td class="rm">${ok ? '○' : '×'}</td></tr>
-      ${ok ? '' : `<tr class="fix"><td></td><td colspan="3">正しくは <b>${right.name}</b>：${right.point}</td></tr>`}`;
+    const st = J.status[b];
+    const fix = st === 'wrong'
+      ? `正しくは <b>${right.name}</b>：${right.point}`
+      : st === 'lucky'
+        ? `決め手だけでは決めきれない。<b>${J.alts[b].map((id) => liquid(id).name).join('・')}</b>の可能性も残っていた`
+        : '';
+    return `<tr class="${st}"><td class="rl">${L}</td><td class="ra">${liquid(a.liq).name}</td>
+      <td class="rk">${a.keys.map((k) => keyText(b, k)).join('、')}</td><td class="rm">${{ ok: '○', lucky: '△', wrong: '×' }[st]}</td></tr>
+      ${fix ? `<tr class="fix ${st}"><td></td><td colspan="3">${fix}</td></tr>` : ''}`;
   }).join('');
   return shell(`<div class="np">
       <div class="np-head"><span>CASE No.${g.no}</span><span>水溶液ミステリー　結果カード（${LEVELS[g.n].name}・${g.n}本）</span><span>${g.date}</span></div>
       <div class="np-body">
         <div class="np-left">
           <div class="stamp r${J.title.rank}"><span>${J.title.name}</span></div>
-          <div class="np-score"><div>正解<b>${J.correct}</b>/${g.n}</div><div>実験<b>${J.used}</b>/${g.max}回</div></div>
+          <div class="np-score"><div>正解<b>${J.correct}</b>/${g.n}</div>${J.lucky ? `<div class="lk">うち まぐれ<b>${J.lucky}</b></div>` : ''}<div>実験<b>${J.used}</b>/${g.max}回</div></div>
         </div>
         <table class="np-table"><thead><tr><th>びん</th><th>自分の答え</th><th>決め手</th><th></th></tr></thead><tbody>${rows}</tbody></table>
       </div>
-      <div class="np-foot">この画面をスクリーンショットして、先生に出そう。</div>
+      <div class="np-foot"><span>この問題は、うまく選べば<b>最少${g.need}回</b>で必ず当てられる。</span><span>この画面をスクリーンショットして、先生に出そう。</span></div>
     </div>
     <div class="res-btns">
       <button class="bigbtn" data-act="toTable">性質の表を見る</button>
@@ -331,6 +359,7 @@ function tableScreen() {
 }
 
 // ---------------- 描画 ----------------
+let lastOv = null;
 function render() {
   let html = '';
   switch (S.screen) {
@@ -344,14 +373,19 @@ function render() {
   }
   if (S.ov) {
     const t = S.ov.type;
+    const start = html.length;
     if (t === 'howto') html += howtoOverlay();
     if (t === 'level') html += levelOverlay();
+    if (t === 'byNo') html += byNoOverlay();
     if (t === 'manner') html += mannerOverlay();
     if (t === 'exp') html += expOverlay();
     if (t === 'confirmAnswer') html += confirmAnswerOverlay();
     if (t === 'pick') html += pickOverlay();
     if (t === 'quit') html += quitOverlay();
+    // 同じダイアログを描きなおすときは、ふわっと出る動きをくり返さない
+    if (S.ov === lastOv) html = html.slice(0, start) + html.slice(start).replace('<div class="ov">', '<div class="ov still">');
   }
+  lastOv = S.ov;
   stage.innerHTML = html;
   S.fresh = { write: null, chip: null };
 }
@@ -376,11 +410,20 @@ function startExp(b, e, manner) {
 
 const ACT = {
   chooseLevel() { S.ov = { type: 'level' }; },
+  byNo() { S.ov = { type: 'byNo', digits: '', n: G.getLevel() }; },
+  noDigit(d) { if (S.ov.digits.length < 3) S.ov.digits = (S.ov.digits + d.d).replace(/^0+/, ''); },
+  noDel() { S.ov.digits = S.ov.digits.slice(0, -1); },
+  noLv(d) { S.ov.n = +d.n; },
+  noStart() {
+    const no = +S.ov.digits;
+    if (!no) return;
+    ACT.start({ n: S.ov.n, no });
+  },
   start(d = {}) {
     const n = +d.n || G.getLevel();
     G.setLevel(n);
     S.ov = null;
-    S.g = G.newGame(undefined, G.getInd(), n);
+    S.g = G.newGame(d.no || undefined, G.getInd(), n);
     S.sel = { b: null, e: null };
     save();
     if (!G.seenHowto()) {
@@ -481,6 +524,7 @@ const ACT = {
   toResult() { S.screen = 'result'; },
   toTable() { S.screen = 'table'; },
   again() { ACT.start({ n: S.g.n }); },
+  // 番号で解いたあとの「もう1問」は、新しいランダムの問題
   toTitle() { S.screen = 'title'; S.ov = null; },
   askQuit() { S.ov = { type: 'quit' }; },
   quit() { S.ov = null; S.screen = 'title'; },

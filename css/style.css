@@ -9,6 +9,7 @@
   --accent: #d9542b; --accent-dark: #9b3519; --accent-soft: #fff1ea;
   --fail: #b2432a; --fail-bg: #fbe6df; --correct: #2f7d5b; --correct-bg: #e3f1e9;
   --pen: #d63a2a;
+  --lucky: #b26a0b; --lucky-bg: #fdf0d8;
   --hand: "Klee One", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
   --ui: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
 }
@@ -149,6 +150,7 @@ body.portrait #rotate { display: block; }
 /* ---------- あそびかた ---------- */
 .ov { position: absolute; inset: 0; z-index: 50; background: rgba(12, 10, 8, .58); display: flex; align-items: center; justify-content: center; animation: fade .2s both; }
 @keyframes fade { from { opacity: 0; } }
+.ov.still { animation: none; }
 .howto { display: flex; flex-direction: column; align-items: center; gap: 26px; }
 .howcards { display: flex; gap: 22px; }
 .hc { width: 330px; height: 430px; padding: 22px 22px; position: relative; transform: rotate(var(--r));
@@ -277,6 +279,28 @@ body.portrait #rotate { display: block; }
 
 .pick { min-width: 560px; }
 .lvdialog { min-width: 760px; }
+.nobtn { position: absolute; left: 50%; top: 548px; transform: translateX(-50%); z-index: 4; min-height: 44px; padding: 0 20px; border-radius: 99px;
+  color: #f3e6cc; font-weight: 700; font-size: 16px; border: 1.5px solid rgba(243, 230, 204, .45); }
+.bynodialog { min-width: 720px; }
+.byno { display: flex; gap: 28px; margin-bottom: 12px; }
+.byno-left { flex: 1; display: flex; flex-direction: column; gap: 16px; }
+.nodisp { font-family: var(--ui); font-size: 22px; font-weight: 700; background: #fff; border-radius: 12px; padding: 10px 18px; box-shadow: inset 0 2px 0 rgba(0,0,0,.08); }
+.nodisp b { font-family: var(--hand); font-size: 52px; margin-left: 8px; letter-spacing: .08em; }
+.nodisp i { font-style: normal; color: var(--ink-faint); }
+.seg.light { background: rgba(0, 0, 0, .06); }
+.seg.light button { flex: 1; color: var(--ink); font-family: var(--ui); font-size: 18px; min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; }
+.seg.light button small { font-size: 12px; font-weight: 400; color: var(--ink-sub); }
+.seg.light button.on { background: var(--ink); color: var(--paper); }
+.seg.light button.on small { color: rgba(251, 247, 236, .7); }
+.pad { display: grid; grid-template-columns: repeat(3, 76px); gap: 8px; }
+.pd { height: 64px; border-radius: 12px; background: #fff; box-shadow: 0 3px 0 #d9ccb0; font-family: var(--ui); font-size: 26px; font-weight: 700; }
+.pd:active { transform: translateY(3px); box-shadow: none; }
+.pd.fn { font-size: 16px; color: var(--ink-sub); }
+.pd.go2 { background: var(--accent); color: #fff; box-shadow: 0 3px 0 var(--accent-dark); font-size: 20px; }
+.pd.go2.off { opacity: .4; pointer-events: none; }
+.memo-help .mh { display: inline-block; min-width: 26px; text-align: center; border-radius: 6px; padding: 0 4px; border: 1.5px solid; }
+.memo-help .mh.o { color: var(--accent); }
+.memo-help .mh.x { color: #c0503a; text-decoration: line-through; }
 .levels { display: flex; gap: 16px; margin-bottom: 14px; }
 .lv { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 10px 14px; background: #fff; border-radius: 14px; box-shadow: 0 4px 0 #d9ccb0; }
 .lv:active { transform: translateY(4px); box-shadow: none; }
@@ -297,6 +321,7 @@ body.portrait #rotate { display: block; }
 .kc.judge .verdict { min-height: 74px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border-radius: 10px; animation: fadein .3s calc(var(--d) + .4s) both; }
 .kc.judge.right .verdict { background: var(--correct-bg); color: var(--correct); }
 .kc.judge.wrong .verdict { background: var(--fail-bg); color: var(--fail); }
+.kc.judge.lucky .verdict { background: var(--lucky-bg); color: var(--lucky); }
 .verdict b { font-size: 20px; }
 .verdict span { font-size: 13px; line-height: 1.3; color: var(--ink); }
 .verdict em { font-family: var(--hand); font-size: 18px; color: var(--fail); }
@@ -332,7 +357,11 @@ body.portrait #rotate { display: block; }
 .np-table tr.wrong .ra { color: var(--fail); text-decoration: line-through 2px; }
 .np-table tr.fix td { border-bottom: 1px dashed var(--ink-faint); padding-top: 0; font-size: 15px; color: var(--fail); }
 .np-table tr.fix b { font-family: var(--hand); font-size: 18px; }
-.np-foot { text-align: right; font-size: 14px; color: var(--ink-sub); }
+.np-table tr.lucky .rm, .np-table tr.fix.lucky td { color: var(--lucky); }
+.np-score .lk { color: var(--lucky); font-size: 16px; }
+.np-score .lk b { color: var(--lucky); font-size: 30px; }
+.np-foot { display: flex; justify-content: space-between; gap: 20px; font-size: 14px; color: var(--ink-sub); }
+.np-foot b { color: var(--ink); font-size: 16px; }
 .res-btns { position: absolute; left: 0; right: 0; bottom: 34px; display: flex; justify-content: center; gap: 22px; z-index: 5; }
 
 /* ---------- 性質の表 ---------- */

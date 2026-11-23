@@ -86,13 +86,9 @@ export function toggleMemo(g, b, liqId) {
   return next;
 }
 
-// 推理に入るとき、メモで○が1つだけのびんは答えを入れておく
+// 推理に入る（メモの○は自動では答えに入れない。子どもが自分で選ぶ）
 export function startAnswer(g) {
   g.phase = 'answer';
-  g.memo.forEach((m, b) => {
-    const os = Object.keys(m).filter((k) => m[k] === 'o');
-    if (os.length === 1 && !g.answers[b].liq) g.answers[b].liq = os[0];
-  });
 }
 
 export function setAnswer(g, b, liqId) {
@@ -125,11 +121,50 @@ export function check(g) {
   return { ok: true, msg: '準備ができたよ。判定しよう！' };
 }
 
+// ---- 決め手の確認 ----
+function permsOf(arr) {
+  if (arr.length <= 1) return [arr.slice()];
+  const out = [];
+  arr.forEach((x, i) => {
+    for (const p of permsOf([...arr.slice(0, i), ...arr.slice(i + 1)])) out.push([x, ...p]);
+  });
+  return out;
+}
+const expIdsOf = (g) => ['miru', 'niou', 'jouhatsu', g.ind || 'litmus'];
+// 液 id が、びん b の実験 exps の結果と合うか
+function fitsBottle(g, b, id, exps) {
+  return exps.every((e) => {
+    const c = cellOf(g, b, e);
+    return !c || c === 'fail' || resultKey(id, e) === c;
+  });
+}
+
+// 子どもが選んだ決め手だけで考えたとき、びん b の正体として残る液
+//  ・決め手にした結果（そのびんの実験）だけを使う
+//  ・「消去法」を選んだときは、ほかのびんの実験結果と「どの液も1本ずつ」も使える
+export function candidatesOf(g, b) {
+  const a = g.answers[b];
+  const keys = a.keys.filter((k) => k !== 'elim');
+  const own = (id) => fitsBottle(g, b, id, keys);
+  if (!a.keys.includes('elim')) return g.liqs.filter(own);
+  const all = expIdsOf(g);
+  const ps = permsOf(g.liqs).filter((p) => own(p[b]) && p.every((id, i) => i === b || fitsBottle(g, i, id, all)));
+  return [...new Set(ps.map((p) => p[b]))];
+}
+
+// 判定：ok＝正解で決め手も十分／lucky＝当たったが決め手では決めきれない（まぐれ）／wrong＝ちがう
 export function judge(g) {
   g.phase = 'judged';
   const marks = g.answers.map((a, b) => a.liq === g.assign[b]);
+  const alts = g.answers.map((a, b) => {
+    const c = candidatesOf(g, b);
+    return g.liqs.filter((id) => c.includes(id) && id !== a.liq);
+  });
+  const status = marks.map((ok, b) => (!ok ? 'wrong' : alts[b].length === 0 && candidatesOf(g, b).length === 1 ? 'ok' : 'lucky'));
   const correct = marks.filter(Boolean).length;
-  return { marks, correct, used: used(g), title: titleOf(correct, g.n, used(g), g.need) };
+  const lucky = status.filter((s) => s === 'lucky').length;
+  const title = lucky > 0 && correct === g.n ? { name: '見習い探偵', rank: 0 } : titleOf(correct, g.n, used(g), g.need);
+  return { marks, status, alts, correct, lucky, used: used(g), title };
 }
 
 // ---- 端末の中への保存 ----

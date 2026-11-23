@@ -18,6 +18,8 @@ export function bottle(letter, { no = '', mark = null, delay = 0, w = 110 } = {}
   const pen =
     mark === 'o'
       ? `<path class="pen" style="animation-delay:${delay}s" d="M50 84 C30 84 20 98 22 110 C24 124 40 132 54 130 C70 128 80 116 78 102 C76 90 64 82 46 86" fill="none" stroke="#d63a2a" stroke-width="5" stroke-linecap="round" pathLength="1"/>`
+      : mark === 'tri'
+        ? `<path class="pen" style="animation-delay:${delay}s" d="M50 84 L78 128 L22 128 Z" fill="none" stroke="#d98a1f" stroke-width="5" stroke-linejoin="round" pathLength="1"/>`
       : mark === 'x'
         ? `<path class="pen" style="animation-delay:${delay}s" d="M26 88 L74 130" fill="none" stroke="#d63a2a" stroke-width="5.5" stroke-linecap="round" pathLength="1"/>
            <path class="pen" style="animation-delay:${delay + 0.18}s" d="M74 88 L26 130" fill="none" stroke="#d63a2a" stroke-width="5.5" stroke-linecap="round" pathLength="1"/>`
