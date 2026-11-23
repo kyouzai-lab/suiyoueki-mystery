@@ -2,18 +2,24 @@
 
 export const LETTERS = ['A', 'B', 'C', 'D', 'E'];
 
+// metal: アルミニウムがとける／cloudy: 二酸化炭素を通すと白くにごる
 export const LIQUIDS = [
-  { id: 'salt', name: '食塩水',     short: '食塩水',   look: 'clear',   smell: false, solid: true,  litmus: 'neutral',
+  { id: 'salt', name: '食塩水',     short: '食塩水',   look: 'clear',   smell: false, solid: true,  litmus: 'neutral', metal: false, cloudy: false,
     point: '中性で、蒸発させると白い固体が残る' },
-  { id: 'lime', name: '石灰水',     short: '石灰水',   look: 'clear',   smell: false, solid: true,  litmus: 'alkali',
-    point: 'アルカリ性で、においがなく、蒸発させると白い固体が残る' },
-  { id: 'soda', name: '炭酸水',     short: '炭酸水',   look: 'bubbles', smell: false, solid: false, litmus: 'acid',
+  { id: 'lime', name: '石灰水',     short: '石灰水',   look: 'clear',   smell: false, solid: true,  litmus: 'alkali',  metal: false, cloudy: true,
+    point: 'アルカリ性で、蒸発させると白い固体が残る。二酸化炭素を通すと白くにごる' },
+  { id: 'soda', name: '炭酸水',     short: '炭酸水',   look: 'bubbles', smell: false, solid: false, litmus: 'acid',    metal: false, cloudy: false,
     point: '泡が出ていて、酸性で、蒸発させても何も残らない' },
-  { id: 'hcl',  name: 'うすい塩酸', short: '塩酸',     look: 'clear',   smell: true,  solid: false, litmus: 'acid',
-    point: '酸性で、つんとするにおいがある' },
-  { id: 'nh3',  name: 'アンモニア水', short: 'アンモニア水', look: 'clear', smell: true, solid: false, litmus: 'alkali',
+  { id: 'hcl',  name: 'うすい塩酸', short: '塩酸',     look: 'clear',   smell: true,  solid: false, litmus: 'acid',    metal: true,  cloudy: false,
+    point: '酸性で、つんとするにおいがある。アルミニウムをとかす' },
+  { id: 'nh3',  name: 'アンモニア水', short: 'アンモニア水', look: 'clear', smell: true, solid: false, litmus: 'alkali', metal: false, cloudy: false,
     point: 'アルカリ性で、つんとするにおいがある' },
+  { id: 'water', name: '水',        short: '水',       look: 'clear',   smell: false, solid: false, litmus: 'neutral', metal: false, cloudy: false,
+    point: '中性で、においも泡もなく、蒸発させると何も残らない', trick: true },
 ];
+// ふだんの5種類（水はひっかけのときだけ）
+export const BASE_IDS = LIQUIDS.filter((l) => !l.trick).map((l) => l.id);
+export const ALL_IDS = LIQUIDS.map((l) => l.id);
 
 export const liquid = (id) => LIQUIDS.find((l) => l.id === id);
 
@@ -22,6 +28,8 @@ export const EXPS = [
   { id: 'niou',     name: 'におう',     slot: 'におい' },
   { id: 'jouhatsu', name: '蒸発させる', slot: '蒸発' },
   { id: 'litmus',   name: 'リトマス紙', slot: 'リトマス' },
+  { id: 'alumi',    name: 'アルミニウムを入れる', slot: 'アルミ' },
+  { id: 'co2',      name: '二酸化炭素を通す',     slot: '二酸化炭素' },
 ];
 
 // 4つ目の実験（酸性・中性・アルカリ性を調べる薬）は、リトマス紙かBTB溶液を選べる
@@ -29,7 +37,7 @@ export const INDICATORS = {
   litmus: { id: 'litmus', name: 'リトマス紙', slot: 'リトマス' },
   btb:    { id: 'btb',    name: 'BTB溶液',    slot: 'BTB' },
 };
-export const expsFor = (ind = 'litmus') => [EXPS[0], EXPS[1], EXPS[2], INDICATORS[ind] || INDICATORS.litmus];
+export const expsFor = (ind = 'litmus') => [EXPS[0], EXPS[1], EXPS[2], INDICATORS[ind] || INDICATORS.litmus, EXPS[4], EXPS[5]];
 
 export const exp = (id) => EXPS.find((e) => e.id === id) || INDICATORS[id];
 
@@ -44,6 +52,10 @@ export const RESULT = {
   acid:    { text: '酸性',         say: '青色リトマス紙が赤くなった。赤色は変わらない。→ 酸性' },
   alkali:  { text: 'アルカリ性',   say: '赤色リトマス紙が青くなった。青色は変わらない。→ アルカリ性' },
   neutral: { text: '中性',         say: 'どちらのリトマス紙も、色は変わらなかった。→ 中性' },
+  melt:    { text: 'とけた',       say: 'アルミニウムが、泡を出してとけた。' },
+  stay:    { text: '変化なし',     say: 'アルミニウムは、とけなかった。' },
+  cloudy:  { text: '白くにごった', say: '二酸化炭素を通すと、白くにごった。' },
+  nocloud: { text: '変化なし',     say: '二酸化炭素を通しても、変わらなかった。' },
   fail:    { text: '失敗',         say: '顔を近づけて直接かいでしまった。気分が悪くなった…' },
 };
 
@@ -55,6 +67,8 @@ export function resultKey(liqId, expId) {
     case 'jouhatsu': return l.solid ? 'solid' : 'none';
     case 'litmus':
     case 'btb': return l.litmus;
+    case 'alumi': return l.metal ? 'melt' : 'stay';
+    case 'co2': return l.cloudy ? 'cloudy' : 'nocloud';
   }
   return null;
 }
@@ -67,12 +81,17 @@ const SAY_BTB = {
 };
 export const sayOf = (expId, key) => (expId === 'btb' && SAY_BTB[key]) || RESULT[key].say;
 
-// 難易度：びんの本数と、実験の上限回数
+// 難易度：びんの本数と、実験の上限回数。鬼は上級をまぐれなしでクリアすると出てくる（水がまざる）
 export const LEVELS = {
-  3: { n: 3, name: '初級', max: 4 },
-  4: { n: 4, name: '中級', max: 6 },
-  5: { n: 5, name: '上級', max: 7 },
+  3: { id: '3', n: 3, name: '初級', max: 4 },
+  4: { id: '4', n: 4, name: '中級', max: 6 },
+  5: { id: '5', n: 5, name: '上級', max: 7 },
+  oni: { id: 'oni', n: 5, name: '鬼', max: 9, hikake: true },
 };
+export const levelOf = (id) => LEVELS[id] || LEVELS[5];
+
+// 鬼（6種類のうち5種類が入っている）の「必ず当てられる回数」。入っている液によらず同じ（総当たりで計算：8回）
+export const NEED_ONI = 8;
 
 // その組み合わせを「うまく選べば必ず当てられる」最少の回数（scratch の総当たり計算で求めた値）
 const NEED = {

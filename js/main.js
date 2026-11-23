@@ -1,5 +1,6 @@
 // 画面と操作
-import { LIQUIDS, LETTERS, LEVELS, RESULT, INDICATORS, liquid, exp, expsFor, sayOf } from './data.js';
+import { LIQUIDS, LETTERS, LEVELS, RESULT, INDICATORS, liquid, exp, expsFor, sayOf, levelOf } from './data.js';
+import { sfx, expSounds, unlock as unlockAudio, setMuted, stopAll } from './sound.js';
 import * as G from './game.js';
 import { bottle, tool, rack, strip, btbDot, scene, howtoArt } from './art.js';
 
@@ -36,10 +37,17 @@ function shell(inner, { board = '', cls = '' } = {}) {
 function topbar(right, { center = '' } = {}) {
   const g = S.g;
   return `<div class="top">
-    <button class="brand" data-act="askQuit"><small>CASE No.${g.no}・${LEVELS[g.n].name}</small><strong>水溶液ミステリー</strong></button>
+    <button class="brand" data-act="askQuit"><small>CASE No.${g.no}・${levelOf(g.lv).name}</small><strong>水溶液ミステリー</strong></button>
     ${center || `<div class="rack ${G.left(g) === 0 ? 'empty' : ''}">${rack(G.left(g), g.max)}<span class="n">のこり<b>${G.left(g)}</b>/${g.max}回</span></div>`}
-    ${right}
+    <div class="topr">${muteBtn()}${right}</div>
   </div>`;
+}
+
+function muteBtn() {
+  const m = G.getMute();
+  return `<button class="mute ${m ? 'on' : ''}" data-act="mute" aria-label="${m ? '音を出す' : '音を消す'}"><svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M4 9 H8 L13 5 V19 L8 15 H4 Z" fill="currentColor"/>
+    ${m ? '<path d="M16 9 L21 15 M21 9 L16 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' : '<path d="M16 9 Q18.5 12 16 15 M18.5 7 Q22.5 12 18.5 17" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>'}</svg></button>`;
 }
 
 function bottlesRow(mode) {
@@ -72,6 +80,7 @@ function titleScreen() {
       <button class="bigbtn" data-act="howto">あそびかた</button>
     </div>
     <button class="nobtn" data-act="byNo">問題番号で解く</button>
+    <div class="title-mute">${muteBtn()}</div>
 `, { board, cls: 'is-title' });
 }
 
@@ -88,25 +97,33 @@ function howtoOverlay() {
   </div></div>`;
 }
 
+function levelCard(lv, cur) {
+  if (lv.hikake && !G.getOni()) {
+    return `<div class="lv locked"><b>？？？</b><span class="lock"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" fill="currentColor"/><path d="M8 10 V7 a4 4 0 0 1 8 0 V10" stroke="currentColor" stroke-width="2.2" fill="none"/></svg></span>
+      <span class="lvt">上級を まぐれなしで<br>全部当てると出てくる</span></div>`;
+  }
+  return `<button class="lv ${lv.hikake ? 'oni' : ''} ${cur === lv.id ? 'last' : ''}" data-act="start" data-lv="${lv.id}">
+      <b>${lv.name}</b><span class="lvb">${LETTERS.slice(0, lv.n).map((L) => bottle(L, { w: 34 })).join('')}</span>
+      <span class="lvt">${lv.hikake ? '水がまざる！' : `${lv.n}本`}・実験${lv.max}回まで</span></button>`;
+}
+
 function levelOverlay() {
   const cur = G.getLevel();
   return `<div class="ov"><div class="sticky dialog lvdialog"><p>何本のびんを推理する？</p>
     ${indRow()}
-    <div class="levels">${Object.values(LEVELS).map((lv) => `<button class="lv ${cur === lv.n ? 'last' : ''}" data-act="start" data-n="${lv.n}">
-      <b>${lv.name}</b><span class="lvb">${LETTERS.slice(0, lv.n).map((L) => bottle(L, { w: 34 })).join('')}</span>
-      <span class="lvt">${lv.n}本・実験${lv.max}回まで</span></button>`).join('')}</div>
+    <div class="levels">${Object.values(LEVELS).map((lv) => levelCard(lv, cur)).join('')}</div>
     <div class="drow"><span class="sm">本数が多いほどむずかしい</span><button class="ghost" data-act="closeOv">もどる</button></div></div></div>`;
 }
 
 function byNoOverlay() {
-  const { digits, n } = S.ov;
+  const { digits, lv: curLv } = S.ov;
   const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'del', '0', 'ok'];
   const ok = digits.length > 0 && +digits > 0;
   return `<div class="ov"><div class="sticky dialog bynodialog"><p><em>問題番号</em>と<em>レベル</em>を入れよう</p>
     <div class="byno">
       <div class="byno-left">
         <div class="nodisp">No.<b>${digits || '<i>―</i>'}</b></div>
-        <div class="seg light">${Object.values(LEVELS).map((lv) => `<button class="${n === lv.n ? 'on' : ''}" data-act="noLv" data-n="${lv.n}">${lv.name}<small>${lv.n}本</small></button>`).join('')}</div>
+        <div class="seg light">${Object.values(LEVELS).filter((lv) => !lv.hikake || G.getOni()).map((lv) => `<button class="${curLv === lv.id ? 'on' : ''}" data-act="noLv" data-lv="${lv.id}">${lv.name}<small>${lv.hikake ? '水あり' : `${lv.n}本`}</small></button>`).join('')}</div>
         ${indRow()}
         <p class="sm">同じ番号・同じレベルなら、みんな同じ問題になるよ。</p>
       </div>
@@ -128,13 +145,13 @@ function indRow() {
 // ---------------- 事件の導入 ----------------
 function introScreen() {
   const g = S.g;
-  const board = `<div class="board"><div class="h">理科室のラベルがはがれてしまった！</div><div class="s">${LEVELS[g.n].name}・No.${g.no}</div></div>`;
+  const board = `<div class="board ${g.hikake ? 'oni' : ''}"><div class="h">${g.hikake ? 'ラベルがはがれたうえに、水がまぎれこんだ！' : '理科室のラベルがはがれてしまった！'}</div><div class="s">${levelOf(g.lv).name}・No.${g.no}</div></div>`;
   return shell(`${bottlesRow('intro')}
     <div class="intro">
       <div class="sticky">
-        <p>${g.n}本のびんには、次の液が<em>1本ずつ</em>入っている。</p>
-        <div class="liqs">${g.liqs.map((id) => `<span>${liquid(id).name}</span>`).join('')}</div>
-        <p class="sm">実験は「見る・におう・蒸発させる・${INDICATORS[g.ind].name}」で<em>${g.max}回</em>まで。においは<em>手であおいで</em>かぐ。</p>
+        <p>${g.hikake ? `${g.n}本のびんには、次の${g.pool.length}種類のうち<em>${g.n}種類</em>が1本ずつ入っている。<em>どれか1つは入っていない！</em>` : `${g.n}本のびんには、次の液が<em>1本ずつ</em>入っている。`}</p>
+        <div class="liqs">${g.pool.map((id) => `<span>${liquid(id).name}</span>`).join('')}</div>
+        <p class="sm">実験は${expsFor(g.ind).length}種類で<em>${g.max}回</em>まで。においは<em>手であおいで</em>かぐ。</p>
         <p class="sm memo-help">カルテの液の名前をタップすると、<span class="mh o">○</span>→<span class="mh x">×</span>→もとにもどる。自分用のメモだよ。</p>
       </div>
       <button class="bigbtn accent" data-act="toLab">実験をはじめる</button>
@@ -149,7 +166,7 @@ function labCard(b) {
     const fresh = S.fresh.write && S.fresh.write.b === b && S.fresh.write.e === e.id;
     return `<div class="sl ${c === 'fail' ? 'fail' : ''}">${tool(e.id)}<span>${e.slot}</span>${c ? resultHTML(c, fresh, e.id) : '<b class="q">？</b>'}</div>`;
   }).join('');
-  const cands = g.liqs.map(liquid).map((l) => {
+  const cands = g.pool.map(liquid).map((l) => {
     const m = g.memo[b][l.id] || '';
     const fresh = S.fresh.chip && S.fresh.chip.b === b && S.fresh.chip.l === l.id;
     return `<button class="cand ${m} ${fresh ? 'new' : ''}" data-act="memo" data-b="${b}" data-l="${l.id}">${l.short}</button>`;
@@ -272,7 +289,7 @@ function pickOverlay() {
   const owner = {};
   g.answers.forEach((a, i) => { if (a.liq && i !== b) owner[a.liq] = LETTERS[i]; });
   return `<div class="ov"><div class="sticky dialog pick"><p>びん <em>${LETTERS[b]}</em> の正体は？</p>
-    <div class="picks">${g.liqs.map(liquid).map((l) => {
+    <div class="picks">${g.pool.map(liquid).map((l) => {
       const m = g.memo[b][l.id];
       return `<button class="pk ${g.answers[b].liq === l.id ? 'on' : ''}" data-act="setliq" data-b="${b}" data-l="${l.id}">
         <span class="pm ${m || ''}">${m === 'x' ? '×' : m === 'o' ? '○' : ''}</span>${l.name}${owner[l.id] ? `<small>${owner[l.id]}でえらんだ</small>` : ''}</button>`;
@@ -326,12 +343,13 @@ function resultScreen() {
       ${fix ? `<tr class="fix ${st}"><td></td><td colspan="3">${fix}</td></tr>` : ''}`;
   }).join('');
   return shell(`<div class="np">
-      <div class="np-head"><span>CASE No.${g.no}</span><span>水溶液ミステリー　結果カード（${LEVELS[g.n].name}・${g.n}本）</span><span>${g.date}</span></div>
+      <div class="np-head"><span>CASE No.${g.no}</span><span>水溶液ミステリー　結果カード（${levelOf(g.lv).name}・${g.n}本${g.hikake ? '・水あり' : ''}）</span><span>${g.date}</span></div>
       <div class="np-body">
         <div class="np-left">
           <div class="stamp r${J.title.rank}"><span>${J.title.name}</span></div>
           <div class="np-score"><div>正解<b>${J.correct}</b>/${g.n}</div>${J.lucky ? `<div class="lk">うち まぐれ<b>${J.lucky}</b></div>` : ''}<div>実験<b>${J.used}</b>/${g.max}回</div></div>
         </div>
+        ${J.unlocked ? '<div class="sticky unlocked">鬼モードが出てきた！<small>水がまざった6種類から推理しよう</small></div>' : ''}
         <table class="np-table"><thead><tr><th>びん</th><th>自分の答え</th><th>根拠になった結果</th><th></th></tr></thead><tbody>${rows}</tbody></table>
       </div>
       <div class="np-foot"><span>この問題は、うまく選べば<b>最少${g.need}回</b>で必ず当てられる。</span></div>
@@ -352,7 +370,7 @@ function tableScreen() {
   const lit = g.ind === 'btb'
     ? { acid: '酸性（黄色）', alkali: 'アルカリ性（青色）', neutral: '中性（緑色）' }
     : { acid: '酸性（青→赤）', alkali: 'アルカリ性（赤→青）', neutral: '中性（変化なし）' };
-  const rows = LIQUIDS.map((l) => `<tr class="${wrongIds.includes(l.id) ? 'miss' : ''} ${g.liqs.includes(l.id) ? '' : 'out'}"><th>${l.name}</th>
+  const rows = LIQUIDS.filter((l) => g.hikake || !l.trick).map((l) => `<tr class="${wrongIds.includes(l.id) ? 'miss' : ''} ${g.liqs.includes(l.id) ? '' : 'out'}"><th>${l.name}</th>
     <td>${yesno(l.look === 'bubbles', '泡がある', '無色透明')}</td><td>${yesno(l.smell, 'つんとする', 'なし')}</td>
     <td>${yesno(l.solid, '白い固体が残る', '何も残らない')}</td><td>${lit[l.litmus]}</td>
     <td class="tag">${wrongIds.includes(l.id) ? '<span class="sticky tiny">まちがえた</span>' : g.liqs.includes(l.id) ? '' : '<span class="outnote">今回は なし</span>'}</td></tr>`).join('');
@@ -403,6 +421,7 @@ function startExp(b, e, manner) {
   const ov = { type: 'exp', b, e, key, done: false };
   S.ov = ov;
   render();
+  expSounds(e, key);
   setTimeout(() => {
     if (S.ov === ov && !ov.done) {
       ov.done = true;
@@ -413,20 +432,20 @@ function startExp(b, e, manner) {
 
 const ACT = {
   chooseLevel() { S.ov = { type: 'level' }; },
-  byNo() { S.ov = { type: 'byNo', digits: '', n: G.getLevel() }; },
+  byNo() { S.ov = { type: 'byNo', digits: '', lv: G.getLevel() }; },
   noDigit(d) { if (S.ov.digits.length < 3) S.ov.digits = (S.ov.digits + d.d).replace(/^0+/, ''); },
   noDel() { S.ov.digits = S.ov.digits.slice(0, -1); },
-  noLv(d) { S.ov.n = +d.n; },
+  noLv(d) { S.ov.lv = d.lv; },
   noStart() {
     const no = +S.ov.digits;
     if (!no) return;
-    ACT.start({ n: S.ov.n, no });
+    ACT.start({ lv: S.ov.lv, no });
   },
   start(d = {}) {
-    const n = +d.n || G.getLevel();
-    G.setLevel(n);
+    const lv = d.lv || G.getLevel();
+    G.setLevel(lv);
     S.ov = null;
-    S.g = G.newGame(d.no || undefined, G.getInd(), n);
+    S.g = G.newGame(d.no || undefined, G.getInd(), lv);
     S.sel = { b: null, e: null };
     save();
     if (!G.seenHowto()) {
@@ -482,6 +501,7 @@ const ACT = {
   },
   skip() {
     if (S.ov && S.ov.type === 'exp') S.ov.done = true;
+    stopAll();
   },
   write() {
     const { b, e, key } = S.ov;
@@ -516,13 +536,29 @@ const ACT = {
   },
   judge() {
     if (!G.check(S.g).ok) return;
-    S.judged = G.judge(S.g);
+    const J = G.judge(S.g);
+    // 上級をまぐれなしで全部当てたら、鬼モードが出てくる
+    if (S.g.lv === '5' && J.correct === S.g.n && J.lucky === 0 && !G.getOni()) {
+      G.setOni();
+      J.unlocked = true;
+    }
+    S.judged = J;
     save();
     S.screen = 'judge';
+    S.g.answers.forEach((_, b) => sfx('pen', 0.3 + b * 0.55));
+    sfx(J.correct === S.g.n && J.lucky === 0 ? 'ok' : 'bad', 0.4 + S.g.n * 0.55);
   },
-  toResult() { S.screen = 'result'; },
+  mute() {
+    G.setMute(!G.getMute());
+    setMuted(G.getMute());
+  },
+  toResult() {
+    S.screen = 'result';
+    sfx('stamp', 0.25);
+    if (S.judged.unlocked) sfx('unlock', 0.8);
+  },
   toTable() { S.screen = 'table'; },
-  again() { ACT.start({ n: S.g.n }); },
+  again() { ACT.start({ lv: S.g.lv }); },
   // 番号で解いたあとの「もう1問」は、新しいランダムの問題
   toTitle() { S.screen = 'title'; S.ov = null; },
   askQuit() { S.ov = { type: 'quit' }; },
@@ -534,6 +570,8 @@ stage.addEventListener('click', (ev) => {
   if (!t || !stage.contains(t)) return;
   const fn = ACT[t.dataset.act];
   if (!fn) return;
+  unlockAudio();
+  if (['selb', 'selt', 'memo', 'pick', 'setliq', 'noDigit', 'noDel', 'noLv', 'setInd'].includes(t.dataset.act)) sfx('tap');
   const r = fn({ ...t.dataset });
   if (r !== 'rendered') render();
 });
@@ -546,4 +584,5 @@ function fit() {
 }
 window.addEventListener('resize', fit);
 fit();
+setMuted(G.getMute());
 render();

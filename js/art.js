@@ -5,6 +5,7 @@ const C = {
   tg: '#e8f3f4', tl: '#4f6064', liquid: '#bfdde1', metal: '#6b6e70',
   flame: '#f2902a', flame2: '#ffe28a', red: '#df4f5a', blue: '#4579cc',
   btb: { acid: '#e6c229', neutral: '#3f9e5a', alkali: '#2f6fc4' }, rubber: '#3a3229',
+  foil: '#c9ced1', can: '#6b8fa3', can2: '#4e6f82',
   paper: '#ffffff', skin: '#f4cfae', accent: '#d9542b', dish: '#eef2f3',
 };
 
@@ -97,6 +98,26 @@ export function tool(name) {
     <path d="M80 26 H90 L87 60 L85 66 L83 60 Z" fill="${C.tg}" stroke="${C.tl}" stroke-width="1.6"/>
     <path d="M81.6 44 H88.4 L86.6 60 L85 64.5 L83.4 60 Z" fill="${C.btb.neutral}"/>
     <path d="M85 71 q-4.5 6 0 9.5 q4.5 -3.5 0 -9.5 z" fill="${C.btb.neutral}" stroke="${C.tl}" stroke-width="1.2"/></svg>`;
+  if (name === 'alumi')
+    return `<svg viewBox="0 0 120 90" aria-hidden="true">
+    <g transform="rotate(-8 44 50)">
+      <path d="M36 18 H54 V72 A9 9 0 0 1 36 72 Z" fill="${C.tg}" stroke="${C.tl}" stroke-width="${s}"/>
+      <path d="M37.2 44 H52.8 V72 A7.8 7.8 0 0 1 37.2 72 Z" fill="${C.liquid}"/>
+      <rect x="33" y="15" width="24" height="5" rx="2.5" fill="${C.tl}"/>
+    </g>
+    <path d="M72 18 L96 13 L101 33 L78 39 Z" fill="${C.foil}" stroke="${C.tl}" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M77 23 L94 19 M80 31 L97 27" stroke="#fff" stroke-width="2" opacity=".8"/>
+    <path d="M86 47 v16 M81 58 l5 6 l5 -6" stroke="${C.tl}" stroke-width="2.2" fill="none" stroke-linecap="round" opacity=".6"/></svg>`;
+  if (name === 'co2')
+    return `<svg viewBox="0 0 120 90" aria-hidden="true">
+    <path d="M36 16 H54 V72 A9 9 0 0 1 36 72 Z" fill="${C.tg}" stroke="${C.tl}" stroke-width="${s}"/>
+    <path d="M37.2 42 H52.8 V72 A7.8 7.8 0 0 1 37.2 72 Z" fill="${C.liquid}"/>
+    <rect x="33" y="13" width="24" height="5" rx="2.5" fill="${C.tl}"/>
+    <path d="M90 22 C90 6 46 4 46 22 V68" stroke="${C.rubber}" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <circle cx="43" cy="58" r="2" fill="#fff" stroke="${C.tl}" stroke-width=".8"/><circle cx="48" cy="50" r="1.7" fill="#fff" stroke="${C.tl}" stroke-width=".8"/>
+    <rect x="80" y="22" width="22" height="56" rx="9" fill="${C.can}" stroke="${C.tl}" stroke-width="1.6"/>
+    <rect x="86" y="16" width="10" height="8" rx="2" fill="${C.can2}"/>
+    <text x="91" y="56" text-anchor="middle" font-size="9" fill="#fff" font-family="Zen Kaku Gothic New, sans-serif" font-weight="700">CO₂</text></svg>`;
   return '';
 }
 
@@ -244,6 +265,45 @@ export function scene(expId, key) {
       <text x="252" y="40" font-size="16" fill="${C.tl}" font-family="Zen Kaku Gothic New, sans-serif">BTB溶液</text>
     </svg>`;
   }
+  if (expId === 'alumi') {
+    const melt = key === 'melt';
+    const bubbles = melt
+      ? [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+          .map((i) => `<circle class="bub" style="animation-delay:${1.0 + (i % 5) * 0.18 + Math.floor(i / 5) * 0.4}s" cx="${192 + ((i * 7) % 22)}" cy="204" r="${2 + (i % 3)}" fill="#fff" stroke="${C.tl}" stroke-width=".8"/>`)
+          .join('')
+      : '';
+    return `<svg viewBox="0 0 420 260" class="xscene s-alumi">
+      <rect x="120" y="244" width="180" height="8" rx="3" fill="#7a6a55"/>
+      <path d="M182 26 H222 V210 A20 20 0 0 1 182 210 Z" fill="${C.tg}" stroke="${C.tl}" stroke-width="3"/>
+      <path d="M185 110 H219 V210 A17 17 0 0 1 185 210 Z" fill="${C.liquid}"/>
+      <path d="M190 40 V200" stroke="#fff" stroke-width="4" opacity=".7" stroke-linecap="round"/>
+      ${bubbles}
+      <g class="foil"><g class="${melt ? 'melt' : ''}">
+        <path d="M190 196 L212 192 L216 208 L194 212 Z" fill="${C.foil}" stroke="${C.tl}" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M194 199 L210 196" stroke="#fff" stroke-width="2" opacity=".8"/>
+      </g></g>
+      <rect x="176" y="20" width="52" height="9" rx="4.5" fill="${C.tl}"/>
+      <text x="252" y="70" font-size="16" fill="${C.tl}" font-family="Zen Kaku Gothic New, sans-serif">アルミニウム</text>
+    </svg>`;
+  }
+  if (expId === 'co2') {
+    const bubbles = [0, 1, 2, 3, 4, 5, 6, 7]
+      .map((i) => `<circle class="bub" style="animation-delay:${0.7 + (i % 4) * 0.25 + Math.floor(i / 4) * 0.12}s" cx="${199 + ((i * 5) % 8)}" cy="200" r="${3 + (i % 2)}" fill="#fff" stroke="${C.tl}" stroke-width=".8"/>`)
+      .join('');
+    return `<svg viewBox="0 0 420 260" class="xscene s-co2">
+      <rect x="120" y="244" width="240" height="8" rx="3" fill="#7a6a55"/>
+      <path d="M182 26 H222 V210 A20 20 0 0 1 182 210 Z" fill="${C.tg}" stroke="${C.tl}" stroke-width="3"/>
+      <path d="M185 110 H219 V210 A17 17 0 0 1 185 210 Z" fill="${C.liquid}"/>
+      <path class="cloud" d="M185 110 H219 V210 A17 17 0 0 1 185 210 Z" fill="#f4f6f6" opacity="${key === 'cloudy' ? 0.92 : 0}"/>
+      <path d="M190 40 V200" stroke="#fff" stroke-width="4" opacity=".7" stroke-linecap="round"/>
+      ${bubbles}
+      <path d="M318 74 C318 20 202 14 202 44 V202" stroke="${C.rubber}" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <rect x="176" y="20" width="52" height="9" rx="4.5" fill="${C.tl}"/>
+      <rect x="296" y="74" width="44" height="168" rx="18" fill="${C.can}" stroke="${C.tl}" stroke-width="3"/>
+      <rect x="308" y="62" width="20" height="16" rx="4" fill="${C.can2}"/>
+      <text x="318" y="168" text-anchor="middle" font-size="15" fill="#fff" font-family="Zen Kaku Gothic New, sans-serif" font-weight="700" writing-mode="tb">二酸化炭素</text>
+    </svg>`;
+  }
   return '';
 }
 
@@ -252,6 +312,6 @@ export function howtoArt(i, ind = 'litmus') {
   if (i === 0)
     return `<div class="howart five">${['A', 'B', 'C', 'D', 'E'].map((l) => bottle(l, { w: 46 })).join('')}</div>`;
   if (i === 1)
-    return `<div class="howart">${rack(7)}<div class="howtools">${tool('miru')}${tool('niou')}${tool('jouhatsu')}${tool(ind)}</div></div>`;
+    return `<div class="howart">${rack(7)}<div class="howtools">${tool('miru')}${tool('niou')}${tool('jouhatsu')}${tool(ind)}${tool('alumi')}${tool('co2')}</div></div>`;
   return `<div class="howart">${tool('niou')}<span class="howarrow">→</span><span class="howcard">正体は？<b>○ △ ×</b></span></div>`;
 }
