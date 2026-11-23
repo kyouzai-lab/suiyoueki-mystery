@@ -156,6 +156,20 @@ export function reasonsOf(g, b) {
   return { exps, elim };
 }
 
+// まぐれだったびん b を、あと1回の実験で決められたか。決められる実験を返す（同じびんを先にさがす）
+export function hintFor(g, b) {
+  const exps = expIdsOf(g);
+  const order = [b, ...[...Array(g.n).keys()].filter((i) => i !== b)];
+  for (const b2 of order) {
+    for (const e of exps) {
+      if (isDone(g, b2, e)) continue;
+      const trial = { ...g, tries: [...g.tries, { b: b2, exp: e, key: resultKey(g.assign[b2], e) }] };
+      if (candidatesOf(trial, b).length === 1) return { b: b2, e };
+    }
+  }
+  return null;
+}
+
 // 判定：ok＝正解で根拠も十分／lucky＝当たったが実験の結果からは決めきれない（まぐれ）／wrong＝ちがう
 export function judge(g) {
   g.phase = 'judged';
@@ -166,8 +180,10 @@ export function judge(g) {
   const reasons = g.answers.map((_, b) => reasonsOf(g, b));
   const correct = marks.filter(Boolean).length;
   const lucky = status.filter((s) => s === 'lucky').length;
-  const title = lucky > 0 && correct === g.n ? { name: '見習い探偵', rank: 0 } : titleOf(correct, g.n, used(g), g.need);
-  return { marks, status, alts, reasons, correct, lucky, used: used(g), title };
+  // 全部当たったけれど、まぐれがあったときは「おしい探偵」
+  const title = lucky > 0 && correct === g.n ? { name: 'おしい探偵', rank: 'oshii' } : titleOf(correct, g.n, used(g), g.need);
+  const hints = status.map((st, b) => (st === 'lucky' ? hintFor(g, b) : null));
+  return { marks, status, alts, reasons, hints, correct, lucky, used: used(g), title };
 }
 
 // ---- 端末の中への保存 ----

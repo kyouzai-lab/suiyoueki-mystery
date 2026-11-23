@@ -393,6 +393,8 @@ body.portrait #rotate { display: block; }
   transform: rotate(-10deg); font-family: var(--ui); font-weight: 900; font-size: 32px; letter-spacing: .05em; opacity: .9; animation: stamp .35s .2s cubic-bezier(.2, 1.6, .4, 1) both; }
 .stamp.r3 span { font-size: 40px; }
 .stamp.r0 { border-color: var(--ink-sub); color: var(--ink-sub); }
+.stamp.roshii { border-color: var(--lucky); color: var(--lucky); }
+.np-table tr.fix .hint { display: block; color: var(--ink); font-family: var(--hand); font-size: 16px; margin-top: 2px; }
 @keyframes stamp { from { transform: rotate(-10deg) scale(1.6); opacity: 0; } }
 .np-score { font-size: 18px; text-align: center; line-height: 1.8; }
 .np-score b { font-family: var(--hand); font-size: 38px; margin: 0 4px; color: var(--ink); }

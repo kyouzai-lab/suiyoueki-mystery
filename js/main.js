@@ -340,7 +340,9 @@ function resultScreen() {
     const fix = st === 'wrong'
       ? `正しくは <b>${right.name}</b>：${pointOf(right.id, g.hikake)}`
       : st === 'lucky'
-        ? `実験の結果だけでは決めきれない。<b>${J.alts[b].map((id) => liquid(id).name).join('・')}</b>の可能性も残っていた`
+        ? `実験の結果だけでは決めきれない。<b>${J.alts[b].map((id) => liquid(id).name).join('・')}</b>の可能性も残っていた。${J.hints[b]
+            ? `<span class="hint">→ びん${LETTERS[J.hints[b].b]}に「${exp(J.hints[b].e).name}」をすれば決められた</span>`
+            : '<span class="hint">→ あと2回以上の実験が必要だった</span>'}`
         : '';
     return `<tr class="${st}"><td class="rl">${L}</td><td class="ra">${liquid(a.liq).name}</td>
       <td class="rk">${reasonTexts(b).join('、')}</td><td class="rm">${{ ok: '○', lucky: '△', wrong: '×' }[st]}</td></tr>
