@@ -19,7 +19,8 @@ body { font-family: var(--ui); color: var(--ink); -webkit-tap-highlight-color: t
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 em { font-style: normal; color: var(--accent); }
 
-#stage { position: absolute; left: 50%; top: 50%; width: 1180px; height: 820px; transform-origin: center; overflow: hidden; border-radius: 6px; }
+/* 最初から真ん中に置き、ページの幅を広げないように fixed にする（広がると fit() が大きすぎる倍率を出す） */
+#stage { position: fixed; left: 50%; top: 50%; width: 1180px; height: 820px; transform: translate(-50%, -50%) scale(.25); transform-origin: center; overflow: hidden; border-radius: 6px; }
 #rotate { display: none; position: fixed; left: 0; right: 0; bottom: 18px; text-align: center; color: #f3ead3; font-size: 15px; }
 body.portrait #rotate { display: block; }
 

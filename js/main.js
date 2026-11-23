@@ -581,11 +581,16 @@ stage.addEventListener('click', (ev) => {
 
 // ---------------- 画面の大きさに合わせる ----------------
 function fit() {
-  const s = Math.min(window.innerWidth / 1180, window.innerHeight / 820);
+  // 見えている範囲の大きさで計算する（ページの幅が広がっていても、まちがえないように）
+  const vv = window.visualViewport;
+  const w = Math.min(vv ? vv.width : Infinity, document.documentElement.clientWidth || Infinity, window.innerWidth);
+  const h = Math.min(vv ? vv.height : Infinity, window.innerHeight);
+  const s = Math.min(w / 1180, h / 820);
   stage.style.transform = `translate(-50%, -50%) scale(${s})`;
-  document.body.classList.toggle('portrait', window.innerHeight > window.innerWidth * 1.1);
+  document.body.classList.toggle('portrait', h > w * 1.1);
 }
 window.addEventListener('resize', fit);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
 fit();
 setMuted(G.getMute());
 render();
