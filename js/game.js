@@ -199,7 +199,7 @@ export function loadGame() {
   if (g.assign.length !== g.n) return null;
   return g;
 }
-// 先生が選ぶ設定：4つ目の実験
+// 最後に選んだ「酸性・アルカリ性を調べる道具」（4つ目の実験）
 export function getInd() {
   return readAll().ind === 'btb' ? 'btb' : 'litmus';
 }

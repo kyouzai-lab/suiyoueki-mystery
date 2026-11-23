@@ -72,9 +72,7 @@ function titleScreen() {
       <button class="bigbtn" data-act="howto">あそびかた</button>
     </div>
     <button class="nobtn" data-act="byNo">問題番号で解く</button>
-    <div class="ind-set"><span>4つ目の実験</span>
-      <div class="seg">${Object.values(INDICATORS).map((x) => `<button class="${G.getInd() === x.id ? 'on' : ''}" data-act="setInd" data-i="${x.id}">${x.name}</button>`).join('')}</div>
-      <span class="sm">先生が選ぶ（次の「はじめる」から）</span></div>`, { board, cls: 'is-title' });
+`, { board, cls: 'is-title' });
 }
 
 function howtoOverlay() {
@@ -93,6 +91,7 @@ function howtoOverlay() {
 function levelOverlay() {
   const cur = G.getLevel();
   return `<div class="ov"><div class="sticky dialog lvdialog"><p>何本のびんを推理する？</p>
+    ${indRow()}
     <div class="levels">${Object.values(LEVELS).map((lv) => `<button class="lv ${cur === lv.n ? 'last' : ''}" data-act="start" data-n="${lv.n}">
       <b>${lv.name}</b><span class="lvb">${LETTERS.slice(0, lv.n).map((L) => bottle(L, { w: 34 })).join('')}</span>
       <span class="lvt">${lv.n}本・実験${lv.max}回まで</span></button>`).join('')}</div>
@@ -103,11 +102,12 @@ function byNoOverlay() {
   const { digits, n } = S.ov;
   const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'del', '0', 'ok'];
   const ok = digits.length > 0 && +digits > 0;
-  return `<div class="ov"><div class="sticky dialog bynodialog"><p>先生が言った<em>問題番号</em>と<em>レベル</em>を入れよう</p>
+  return `<div class="ov"><div class="sticky dialog bynodialog"><p><em>問題番号</em>と<em>レベル</em>を入れよう</p>
     <div class="byno">
       <div class="byno-left">
         <div class="nodisp">No.<b>${digits || '<i>―</i>'}</b></div>
         <div class="seg light">${Object.values(LEVELS).map((lv) => `<button class="${n === lv.n ? 'on' : ''}" data-act="noLv" data-n="${lv.n}">${lv.name}<small>${lv.n}本</small></button>`).join('')}</div>
+        ${indRow()}
         <p class="sm">同じ番号・同じレベルなら、みんな同じ問題になるよ。</p>
       </div>
       <div class="pad">${keys.map((k) => k === 'del'
@@ -117,6 +117,12 @@ function byNoOverlay() {
           : `<button class="pd" data-act="noDigit" data-d="${k}">${k}</button>`).join('')}</div>
     </div>
     <div class="drow"><span></span><button class="ghost" data-act="closeOv">もどる</button></div></div></div>`;
+}
+
+// 酸性・アルカリ性を調べる道具（自分で選ぶ）
+function indRow() {
+  return `<div class="indrow"><span>酸性・アルカリ性を<br>調べる道具</span>
+    <div class="seg light">${Object.values(INDICATORS).map((x) => `<button class="${G.getInd() === x.id ? 'on' : ''}" data-act="setInd" data-i="${x.id}">${x.name}</button>`).join('')}</div></div>`;
 }
 
 // ---------------- 事件の導入 ----------------
@@ -297,7 +303,7 @@ function judgeScreen() {
       <div class="verdict">${J.status[b] === 'ok' ? '<b>○ 正解</b>' : J.status[b] === 'lucky' ? '<b>△ まぐれ</b><span>当たったけど<br>決め手が足りない</span>' : `<b>× ちがう</b><span>正しくは<br><em>${liquid(g.assign[b]).name}</em></span>`}</div>
       <div class="keys">${a.keys.map((k) => `<span>${keyText(b, k)}</span>`).join('')}</div></div>`;
   }).join('');
-  return shell(`${topbar('<span></span>', { center: '<div class="center-title">判定<small>先生の赤ペンが入るよ</small></div>' })}
+  return shell(`${topbar('<span></span>', { center: '<div class="center-title">判定<small>赤ペンで答え合わせ</small></div>' })}
     ${bottlesRow('judge')}
     <div class="cards">${cards}</div>
     <div class="tray judge-tray"><div class="tray-hint big">正解 <b>${J.correct}</b> / ${g.n}${J.lucky ? `（まぐれ ${J.lucky}）` : ''}　・　実験 <b>${J.used}</b> / ${g.max}回</div>

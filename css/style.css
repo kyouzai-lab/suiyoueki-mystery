@@ -282,6 +282,9 @@ body.portrait #rotate { display: block; }
 .nobtn { position: absolute; left: 50%; top: 548px; transform: translateX(-50%); z-index: 4; min-height: 44px; padding: 0 20px; border-radius: 99px;
   color: #f3e6cc; font-weight: 700; font-size: 16px; border: 1.5px solid rgba(243, 230, 204, .45); }
 .bynodialog { min-width: 720px; }
+.indrow { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; font-family: var(--ui); font-size: 15px; font-weight: 700; line-height: 1.3; }
+.indrow .seg { flex: 1; }
+.byno-left .indrow { margin-bottom: 0; }
 .byno { display: flex; gap: 28px; margin-bottom: 12px; }
 .byno-left { flex: 1; display: flex; flex-direction: column; gap: 16px; }
 .nodisp { font-family: var(--ui); font-size: 22px; font-weight: 700; background: #fff; border-radius: 12px; padding: 10px 18px; box-shadow: inset 0 2px 0 rgba(0,0,0,.08); }
