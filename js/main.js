@@ -337,7 +337,7 @@ function resultScreen() {
         </div>
         <table class="np-table"><thead><tr><th>びん</th><th>自分の答え</th><th>決め手</th><th></th></tr></thead><tbody>${rows}</tbody></table>
       </div>
-      <div class="np-foot"><span>この問題は、うまく選べば<b>最少${g.need}回</b>で必ず当てられる。</span><span>この画面をスクリーンショットして、先生に出そう。</span></div>
+      <div class="np-foot"><span>この問題は、うまく選べば<b>最少${g.need}回</b>で必ず当てられる。</span></div>
     </div>
     <div class="res-btns">
       <button class="bigbtn" data-act="toTable">性質の表を見る</button>
