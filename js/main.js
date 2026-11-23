@@ -79,7 +79,7 @@ function howtoOverlay() {
   const steps = [
     ['びんの正体', 'びんに、ちがう水溶液が<b>1本ずつ</b>入っている。どのびんが何かを当てよう。初級は3本、中級は4本、上級は5本。'],
     ['実験は回数が決まっている', '1回で調べられるのは、<b>1本のびんに1つの実験</b>だけ。初級4回・中級6回・上級7回まで。どのびんに何を調べるか考えよう。'],
-    ['推理して答える', 'カルテの液の名前は、タップで<b>○→×→もとにもどる</b>メモ。わかったら「推理する」。正体と、<b>決め手</b>になった結果を答えよう。決め手が足りないと「まぐれ」になるよ。'],
+    ['推理して答える', 'カルテの液の名前は、タップで<b>○→×→もとにもどる</b>メモ。わかったら「推理する」で、全部のびんの正体を答えよう。実験の結果から決めきれないのに当たったら「まぐれ」になるよ。'],
   ];
   return `<div class="ov"><div class="howto">
     <div class="howcards">${steps.map(([h, t], i) => `<div class="hc" style="--r:${ROT[i]}"><div class="hn">${i + 1}</div><h3>${h}</h3>${howtoArt(i, G.getInd())}<p>${t}</p></div>`).join('')}</div>
@@ -242,30 +242,26 @@ function ansCard(b, chk) {
   const a = g.answers[b];
   const slots = expsFor(g.ind).map((e) => {
     const c = G.cellOf(g, b, e.id);
-    if (c && c !== 'fail') {
-      const on = a.keys.includes(e.id);
-      return `<button class="sl key ${on ? 'on' : ''}" data-act="key" data-b="${b}" data-k="${e.id}">${tool(e.id)}<span>${e.slot}</span>${resultHTML(c, false, e.id)}</button>`;
-    }
+    if (c && c !== 'fail') return `<div class="sl">${tool(e.id)}<span>${e.slot}</span>${resultHTML(c, false, e.id)}</div>`;
     return `<div class="sl dim">${tool(e.id)}<span>${e.slot}</span><b class="q">${c === 'fail' ? '失敗' : '−'}</b></div>`;
   }).join('');
   const need = !chk.ok && chk.b === b;
   return `<div class="kc ans ${need ? 'need' : ''}" style="--r:${ROT[b]}">
-    <div class="kc-head"><span class="l">${LETTERS[b]}</span><span class="s">決め手をタップ</span></div>
+    <div class="kc-head"><span class="l">${LETTERS[b]}</span><span class="s">正体は？</span></div>
     <button class="ansname ${a.liq ? 'pickd' : ''}" data-act="pick" data-b="${b}">${a.liq ? liquid(a.liq).name : '正体は？'}</button>
-    ${slots}
-    <button class="elim ${a.keys.includes('elim') ? 'on' : ''}" data-act="key" data-b="${b}" data-k="elim">消去法</button></div>`;
+    ${slots}</div>`;
 }
 
 function answerScreen() {
   const g = S.g;
   const chk = G.check(g);
   return shell(`${topbar(`<button class="go accent ${chk.ok ? 'glow' : 'off'}" data-act="judge">判定する</button>`, {
-      center: '<div class="center-title">推理する<small>正体を選び、決め手にした結果をタップしよう</small></div>' })}
+      center: '<div class="center-title">推理する<small>全部のびんの正体をえらぼう</small></div>' })}
     ${bottlesRow('answer')}
     <div class="cards">${G.letters(g).map((_, i) => ansCard(i, chk)).join('')}</div>
     <div class="tray ans-tray">
       ${G.left(g) > 0 ? `<button class="bigbtn" data-act="backLab">← 実験にもどる<small>あと${G.left(g)}回</small></button>` : ''}
-      <div class="tray-hint">実験していないびんは「<b>消去法</b>」を決め手にできるよ。</div>
+      <div class="tray-hint">実験の結果だけでは決めきれないのに当たったら「<b>まぐれ</b>」になるよ。</div>
       <div class="sticky confirm ${chk.ok ? 'ok' : ''}"><p>${chk.msg}</p></div>
     </div>`, { cls: 'is-answer' });
 }
@@ -285,10 +281,11 @@ function pickOverlay() {
 }
 
 // ---------------- 判定 ----------------
-function keyText(b, k) {
-  if (k === 'elim') return '消去法';
-  const c = G.cellOf(S.g, b, k);
-  return `${exp(k).slot}：${RESULT[c].text}`;
+function reasonTexts(b) {
+  const r = S.judged.reasons[b];
+  const t = r.exps.map((k) => `${exp(k).slot}：${RESULT[G.cellOf(S.g, b, k)].text}`);
+  if (r.elim) t.push('消去法');
+  return t.length ? t : ['実験なし'];
 }
 
 function judgeScreen() {
@@ -300,8 +297,8 @@ function judgeScreen() {
     return `<div class="kc judge ${J.status[b] === 'ok' ? 'right' : J.status[b] === 'lucky' ? 'lucky' : 'wrong'}" style="--r:${ROT[b]};--d:${0.3 + b * 0.55}s">
       <div class="kc-head"><span class="l">${L}</span><span class="s">判定</span></div>
       <div class="ansname pickd">${liquid(a.liq).name}</div>
-      <div class="verdict">${J.status[b] === 'ok' ? '<b>○ 正解</b>' : J.status[b] === 'lucky' ? '<b>△ まぐれ</b><span>当たったけど<br>決め手が足りない</span>' : `<b>× ちがう</b><span>正しくは<br><em>${liquid(g.assign[b]).name}</em></span>`}</div>
-      <div class="keys">${a.keys.map((k) => `<span>${keyText(b, k)}</span>`).join('')}</div></div>`;
+      <div class="verdict">${J.status[b] === 'ok' ? '<b>○ 正解</b>' : J.status[b] === 'lucky' ? '<b>△ まぐれ</b><span>当たったけど<br>結果からは決めきれない</span>' : `<b>× ちがう</b><span>正しくは<br><em>${liquid(g.assign[b]).name}</em></span>`}</div>
+      <div class="keys">${reasonTexts(b).map((t) => `<span>${t}</span>`).join('')}</div></div>`;
   }).join('');
   return shell(`${topbar('<span></span>', { center: '<div class="center-title">判定<small>赤ペンで答え合わせ</small></div>' })}
     ${bottlesRow('judge')}
@@ -322,10 +319,10 @@ function resultScreen() {
     const fix = st === 'wrong'
       ? `正しくは <b>${right.name}</b>：${right.point}`
       : st === 'lucky'
-        ? `決め手だけでは決めきれない。<b>${J.alts[b].map((id) => liquid(id).name).join('・')}</b>の可能性も残っていた`
+        ? `実験の結果だけでは決めきれない。<b>${J.alts[b].map((id) => liquid(id).name).join('・')}</b>の可能性も残っていた`
         : '';
     return `<tr class="${st}"><td class="rl">${L}</td><td class="ra">${liquid(a.liq).name}</td>
-      <td class="rk">${a.keys.map((k) => keyText(b, k)).join('、')}</td><td class="rm">${{ ok: '○', lucky: '△', wrong: '×' }[st]}</td></tr>
+      <td class="rk">${reasonTexts(b).join('、')}</td><td class="rm">${{ ok: '○', lucky: '△', wrong: '×' }[st]}</td></tr>
       ${fix ? `<tr class="fix ${st}"><td></td><td colspan="3">${fix}</td></tr>` : ''}`;
   }).join('');
   return shell(`<div class="np">
@@ -335,7 +332,7 @@ function resultScreen() {
           <div class="stamp r${J.title.rank}"><span>${J.title.name}</span></div>
           <div class="np-score"><div>正解<b>${J.correct}</b>/${g.n}</div>${J.lucky ? `<div class="lk">うち まぐれ<b>${J.lucky}</b></div>` : ''}<div>実験<b>${J.used}</b>/${g.max}回</div></div>
         </div>
-        <table class="np-table"><thead><tr><th>びん</th><th>自分の答え</th><th>決め手</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+        <table class="np-table"><thead><tr><th>びん</th><th>自分の答え</th><th>根拠になった結果</th><th></th></tr></thead><tbody>${rows}</tbody></table>
       </div>
       <div class="np-foot"><span>この問題は、うまく選べば<b>最少${g.need}回</b>で必ず当てられる。</span></div>
     </div>
@@ -516,10 +513,6 @@ const ACT = {
     G.setAnswer(S.g, b, S.g.answers[b].liq === d.l ? null : d.l);
     save();
     S.ov = null;
-  },
-  key(d) {
-    G.toggleKey(S.g, +d.b, d.k);
-    save();
   },
   judge() {
     if (!G.check(S.g).ok) return;

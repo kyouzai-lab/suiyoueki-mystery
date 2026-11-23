@@ -44,7 +44,7 @@ export function newGame(no, ind = 'litmus', n = 5) {
     assign,
     tries: [], // { b: びんの番号, exp: 実験, key: 結果 or 'fail' }
     memo: assign.map(() => ({})), // memo[b][liqId] = 'o' | 'x'
-    answers: assign.map(() => ({ liq: null, keys: [] })), // keys: 実験id or 'elim'
+    answers: assign.map(() => ({ liq: null })),
     phase: 'lab', // lab | answer | judged
     date: `${d.getMonth() + 1}月${d.getDate()}日`,
   };
@@ -95,13 +95,6 @@ export function setAnswer(g, b, liqId) {
   g.answers[b].liq = liqId;
 }
 
-export function toggleKey(g, b, key) {
-  const ks = g.answers[b].keys;
-  const i = ks.indexOf(key);
-  if (i >= 0) ks.splice(i, 1);
-  else ks.push(key);
-}
-
 // 判定できるかどうか。できないときは、子どもに見せる一言を返す
 export function check(g) {
   for (let b = 0; b < g.n; b++) {
@@ -115,13 +108,10 @@ export function check(g) {
     }
     seen[id] = b;
   }
-  for (let b = 0; b < g.n; b++) {
-    if (g.answers[b].keys.length === 0) return { ok: false, b, msg: `びん${LETTERS[b]}の決め手を1つ以上えらぼう` };
-  }
   return { ok: true, msg: '準備ができたよ。判定しよう！' };
 }
 
-// ---- 決め手の確認 ----
+// ---- 根拠の確認（やった実験の結果だけで正体が決まるか）----
 function permsOf(arr) {
   if (arr.length <= 1) return [arr.slice()];
   const out = [];
@@ -131,40 +121,44 @@ function permsOf(arr) {
   return out;
 }
 const expIdsOf = (g) => ['miru', 'niou', 'jouhatsu', g.ind || 'litmus'];
-// 液 id が、びん b の実験 exps の結果と合うか
-function fitsBottle(g, b, id, exps) {
-  return exps.every((e) => {
+// 液 id が、びん b でやった実験の結果と合うか
+function fitsBottle(g, b, id) {
+  return expIdsOf(g).every((e) => {
     const c = cellOf(g, b, e);
     return !c || c === 'fail' || resultKey(id, e) === c;
   });
 }
 
-// 子どもが選んだ決め手だけで考えたとき、びん b の正体として残る液
-//  ・決め手にした結果（そのびんの実験）だけを使う
-//  ・「消去法」を選んだときは、ほかのびんの実験結果と「どの液も1本ずつ」も使える
+// やった実験の結果全部と「どの液も1本ずつ」で考えたとき、びん b の正体として残る液
 export function candidatesOf(g, b) {
-  const a = g.answers[b];
-  const keys = a.keys.filter((k) => k !== 'elim');
-  const own = (id) => fitsBottle(g, b, id, keys);
-  if (!a.keys.includes('elim')) return g.liqs.filter(own);
-  const all = expIdsOf(g);
-  const ps = permsOf(g.liqs).filter((p) => own(p[b]) && p.every((id, i) => i === b || fitsBottle(g, i, id, all)));
-  return [...new Set(ps.map((p) => p[b]))];
+  const ps = permsOf(g.liqs).filter((p) => p.every((id, i) => fitsBottle(g, i, id)));
+  const c = new Set(ps.map((p) => p[b]));
+  return g.liqs.filter((id) => c.has(id));
 }
 
-// 判定：ok＝正解で決め手も十分／lucky＝当たったが決め手では決めきれない（まぐれ）／wrong＝ちがう
+// 結果カードに出す決め手：そのびんでやった実験の結果。自分の結果だけで決まらないときは「消去法」もつける
+export function reasonsOf(g, b) {
+  const exps = expIdsOf(g).filter((e) => {
+    const c = cellOf(g, b, e);
+    return c && c !== 'fail';
+  });
+  const ownOnly = g.liqs.filter((id) => fitsBottle(g, b, id));
+  const elim = ownOnly.length > 1 && candidatesOf(g, b).length === 1;
+  return { exps, elim };
+}
+
+// 判定：ok＝正解で根拠も十分／lucky＝当たったが実験の結果からは決めきれない（まぐれ）／wrong＝ちがう
 export function judge(g) {
   g.phase = 'judged';
   const marks = g.answers.map((a, b) => a.liq === g.assign[b]);
-  const alts = g.answers.map((a, b) => {
-    const c = candidatesOf(g, b);
-    return g.liqs.filter((id) => c.includes(id) && id !== a.liq);
-  });
-  const status = marks.map((ok, b) => (!ok ? 'wrong' : alts[b].length === 0 && candidatesOf(g, b).length === 1 ? 'ok' : 'lucky'));
+  const cands = g.answers.map((_, b) => candidatesOf(g, b));
+  const alts = g.answers.map((a, b) => cands[b].filter((id) => id !== a.liq));
+  const status = marks.map((ok, b) => (!ok ? 'wrong' : cands[b].length === 1 ? 'ok' : 'lucky'));
+  const reasons = g.answers.map((_, b) => reasonsOf(g, b));
   const correct = marks.filter(Boolean).length;
   const lucky = status.filter((s) => s === 'lucky').length;
   const title = lucky > 0 && correct === g.n ? { name: '見習い探偵', rank: 0 } : titleOf(correct, g.n, used(g), g.need);
-  return { marks, status, alts, correct, lucky, used: used(g), title };
+  return { marks, status, alts, reasons, correct, lucky, used: used(g), title };
 }
 
 // ---- 端末の中への保存 ----
