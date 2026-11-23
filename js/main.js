@@ -152,7 +152,10 @@ function introScreen() {
         <p>${g.hikake ? `${g.n}本のびんには、次の${g.pool.length}種類のうち<em>${g.n}種類</em>が1本ずつ入っている。<em>どれか1つは入っていない！</em>` : `${g.n}本のびんには、次の液が<em>1本ずつ</em>入っている。`}</p>
         <div class="liqs">${g.pool.map((id) => `<span>${liquid(id).name}</span>`).join('')}</div>
         <p class="sm">実験は${expsFor(g.ind).length}種類で<em>${g.max}回</em>まで。においは<em>手であおいで</em>かぐ。</p>
-        <p class="sm memo-help">カルテの液の名前をタップすると、<span class="mh o">○</span>→<span class="mh x">×</span>→もとにもどる。自分用のメモだよ。</p>
+        <div class="memo-help"><p class="sm">カルテの液の名前は、自分用のメモ。タップするたびに変わるよ。</p>
+          <div class="mh-row"><span class="mh-step"><span class="mh o">食塩水</span><small>これかも</small></span><i>→</i>
+          <span class="mh-step"><span class="mh x">食塩水</span><small>ちがう</small></span><i>→</i>
+          <span class="mh-step"><span class="mh">食塩水</span><small>もとどおり</small></span></div></div>
       </div>
       <button class="bigbtn accent" data-act="toLab">実験をはじめる</button>
     </div>`, { board, cls: 'is-intro' });
