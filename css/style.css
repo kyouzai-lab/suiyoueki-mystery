@@ -299,6 +299,9 @@ body.portrait #rotate { display: block; }
 .e4 .sl b { font-size: 15px; }
 .e4 .kc { gap: 5px; }
 .e4 .cand { min-height: 30px; font-size: 13px; }
+.e6 .cand { font-size: 12px; letter-spacing: -.03em; white-space: nowrap; padding: 2px 0; }
+.e6 .sl b { font-size: 14.5px; }
+.e6 .sl { font-size: 12px; }
 .topr { display: flex; align-items: center; gap: 12px; }
 .mute { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #6d5a42; background: rgba(255, 255, 255, .45); }
 .mute svg { width: 26px; height: 26px; }
@@ -420,6 +423,10 @@ body.portrait #rotate { display: block; }
 .chalk tbody th { font-size: 23px; color: #fff; width: 170px; }
 .chalk tr.miss td, .chalk tr.miss th { color: #ffe98a; }
 .chalk td.tag { width: 130px; }
+.table-board.wide .chalk { font-size: 17px; }
+.table-board.wide .chalk th, .table-board.wide .chalk td { padding: 12px 6px; }
+.table-board.wide .chalk tbody th { width: 140px; font-size: 20px; }
+.table-board.wide .chalk td.tag { width: 110px; }
 .chalk tr.out th, .chalk tr.out td { color: rgba(255, 255, 255, .35); }
 .outnote { font-size: 14px; color: rgba(255, 255, 255, .45); }
 .sticky.tiny { display: inline-block; padding: 6px 12px; font-size: 16px; color: var(--ink); }

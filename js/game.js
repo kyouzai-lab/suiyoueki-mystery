@@ -103,16 +103,18 @@ export function setAnswer(g, b, liqId) {
 
 // 判定できるかどうか。できないときは、子どもに見せる一言を返す
 export function check(g) {
-  for (let b = 0; b < g.n; b++) {
-    if (!g.answers[b].liq) return { ok: false, b, msg: `びん${LETTERS[b]}の正体がまだ決まっていないよ` };
-  }
+  // 同じ液を2本に選んだら、ほかがまだでもすぐ知らせる
   const seen = {};
   for (let b = 0; b < g.n; b++) {
     const id = g.answers[b].liq;
+    if (!id) continue;
     if (seen[id] !== undefined) {
       return { ok: false, b, msg: `${liquid(id).name}が2本あるよ（${LETTERS[seen[id]]}と${LETTERS[b]}）。どの液も1本ずつだよ` };
     }
     seen[id] = b;
+  }
+  for (let b = 0; b < g.n; b++) {
+    if (!g.answers[b].liq) return { ok: false, b, msg: `びん${LETTERS[b]}の正体がまだ決まっていないよ` };
   }
   return { ok: true, msg: '準備ができたよ。判定しよう！' };
 }

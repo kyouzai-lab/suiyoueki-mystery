@@ -7,11 +7,11 @@ export const LIQUIDS = [
   { id: 'salt', name: '食塩水',     short: '食塩水',   look: 'clear',   smell: false, solid: true,  litmus: 'neutral', metal: false, cloudy: false,
     point: '中性で、蒸発させると白い固体が残る' },
   { id: 'lime', name: '石灰水',     short: '石灰水',   look: 'clear',   smell: false, solid: true,  litmus: 'alkali',  metal: false, cloudy: true,
-    point: 'アルカリ性で、蒸発させると白い固体が残る。二酸化炭素を通すと白くにごる' },
+    point: 'アルカリ性で、においがなく、蒸発させると白い固体が残る', pointOni: '二酸化炭素を通すと白くにごる' },
   { id: 'soda', name: '炭酸水',     short: '炭酸水',   look: 'bubbles', smell: false, solid: false, litmus: 'acid',    metal: false, cloudy: false,
     point: '泡が出ていて、酸性で、蒸発させても何も残らない' },
   { id: 'hcl',  name: 'うすい塩酸', short: '塩酸',     look: 'clear',   smell: true,  solid: false, litmus: 'acid',    metal: true,  cloudy: false,
-    point: '酸性で、つんとするにおいがある。アルミニウムをとかす' },
+    point: '酸性で、つんとするにおいがある', pointOni: 'アルミニウムをとかす' },
   { id: 'nh3',  name: 'アンモニア水', short: 'アンモニア水', look: 'clear', smell: true, solid: false, litmus: 'alkali', metal: false, cloudy: false,
     point: 'アルカリ性で、つんとするにおいがある' },
   { id: 'water', name: '水',        short: '水',       look: 'clear',   smell: false, solid: false, litmus: 'neutral', metal: false, cloudy: false,
@@ -22,6 +22,11 @@ export const BASE_IDS = LIQUIDS.filter((l) => !l.trick).map((l) => l.id);
 export const ALL_IDS = LIQUIDS.map((l) => l.id);
 
 export const liquid = (id) => LIQUIDS.find((l) => l.id === id);
+// 正しい答えの説明（鬼モードのときだけ、新しい実験のことも書く）
+export const pointOf = (id, oni) => {
+  const l = liquid(id);
+  return oni && l.pointOni ? `${l.point}。${l.pointOni}` : l.point;
+};
 
 export const EXPS = [
   { id: 'miru',     name: '見る',       slot: '見る' },

@@ -1,5 +1,5 @@
 // 画面と操作
-import { LIQUIDS, LETTERS, LEVELS, RESULT, INDICATORS, liquid, exp, expsFor, sayOf, levelOf } from './data.js';
+import { LIQUIDS, LETTERS, LEVELS, RESULT, INDICATORS, liquid, exp, expsFor, sayOf, levelOf, pointOf } from './data.js';
 import { sfx, expSounds, unlock as unlockAudio, setMuted, stopAll } from './sound.js';
 import * as G from './game.js';
 import { bottle, tool, rack, strip, btbDot, scene, howtoArt } from './art.js';
@@ -104,7 +104,7 @@ function levelCard(lv, cur) {
   }
   return `<button class="lv ${lv.hikake ? 'oni' : ''} ${cur === lv.id ? 'last' : ''}" data-act="start" data-lv="${lv.id}">
       <b>${lv.name}</b><span class="lvb">${LETTERS.slice(0, lv.n).map((L) => bottle(L, { w: 34 })).join('')}</span>
-      <span class="lvt">${lv.hikake ? `水がまざる・新しい実験2つ<br>${lv.max}回まで` : `${lv.n}本・実験${lv.max}回まで`}</span></button>`;
+      <span class="lvt">${lv.hikake ? `水と新しい実験<br>${lv.max}回まで` : `${lv.n}本・実験${lv.max}回まで`}</span></button>`;
 }
 
 function levelOverlay() {
@@ -172,7 +172,8 @@ function labCard(b) {
   const cands = g.pool.map(liquid).map((l) => {
     const m = g.memo[b][l.id] || '';
     const fresh = S.fresh.chip && S.fresh.chip.b === b && S.fresh.chip.l === l.id;
-    return `<button class="cand ${m} ${fresh ? 'new' : ''}" data-act="memo" data-b="${b}" data-l="${l.id}">${l.short}</button>`;
+    const label = g.hikake && l.id === 'nh3' ? 'アンモニア' : l.short;
+    return `<button class="cand ${m} ${fresh ? 'new' : ''}" data-act="memo" data-b="${b}" data-l="${l.id}">${label}</button>`;
   }).join('');
   return `<div class="kc ${S.sel.b === b ? 'sel' : ''}" style="--r:${ROT[b]}" data-act="selb" data-b="${b}">
     <div class="kc-head"><span class="l">${LETTERS[b]}</span><span class="s">カルテ</span></div>${slots}
@@ -337,7 +338,7 @@ function resultScreen() {
     const right = liquid(g.assign[b]);
     const st = J.status[b];
     const fix = st === 'wrong'
-      ? `正しくは <b>${right.name}</b>：${right.point}`
+      ? `正しくは <b>${right.name}</b>：${pointOf(right.id, g.hikake)}`
       : st === 'lucky'
         ? `実験の結果だけでは決めきれない。<b>${J.alts[b].map((id) => liquid(id).name).join('・')}</b>の可能性も残っていた`
         : '';
@@ -376,9 +377,10 @@ function tableScreen() {
   const rows = LIQUIDS.filter((l) => g.hikake || !l.trick).map((l) => `<tr class="${wrongIds.includes(l.id) ? 'miss' : ''} ${g.liqs.includes(l.id) ? '' : 'out'}"><th>${l.name}</th>
     <td>${yesno(l.look === 'bubbles', '泡がある', '無色透明')}</td><td>${yesno(l.smell, 'つんとする', 'なし')}</td>
     <td>${yesno(l.solid, '白い固体が残る', '何も残らない')}</td><td>${lit[l.litmus]}</td>
+    ${g.hikake ? `<td>${yesno(l.metal, 'とける', '変化なし')}</td><td>${yesno(l.cloudy, '白くにごる', '変化なし')}</td>` : ''}
     <td class="tag">${wrongIds.includes(l.id) ? '<span class="sticky tiny">まちがえた</span>' : g.liqs.includes(l.id) ? '' : '<span class="outnote">今回は なし</span>'}</td></tr>`).join('');
-  return shell(`<div class="board table-board"><div class="h">水溶液の性質</div>
-      <table class="chalk"><thead><tr><th></th><th>見る</th><th>におい</th><th>蒸発させる</th><th>${INDICATORS[g.ind].name}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+  return shell(`<div class="board table-board ${g.hikake ? 'wide' : ''}"><div class="h">水溶液の性質</div>
+      <table class="chalk"><thead><tr><th></th><th>見る</th><th>におい</th><th>蒸発させる</th><th>${INDICATORS[g.ind].name}</th>${g.hikake ? '<th>アルミニウム</th><th>二酸化炭素</th>' : ''}<th></th></tr></thead><tbody>${rows}</tbody></table></div>
     <div class="res-btns"><button class="bigbtn" data-act="toResult">← 結果カードにもどる</button><button class="bigbtn accent" data-act="again">もう1問</button></div>`, { cls: 'is-table' });
 }
 
